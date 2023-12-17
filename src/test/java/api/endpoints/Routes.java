@@ -26,6 +26,8 @@ public class Routes {
 	public static String GET_BOOKING = BASE_URL_BOOKER + "/booking/{id}";
 	public static String CREATE_BOOKING = BASE_URL_BOOKER +"/booking";
 	public static String UPDATE_BOOKING = BASE_URL_BOOKER + "/booking/{id}";
+	public static String PARTIAL_UPDATE_BOOKING = BASE_URL_BOOKER + "/booking/{id}";
+	public static String DELETE_BOOKING = BASE_URL_BOOKER + "/booking/{id}";
 	
 	
 }

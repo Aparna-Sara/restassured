@@ -5,7 +5,10 @@
     <classes>
       <class name="api.tests.RestBooker_tests">
         <methods>
-          <include name="test_create_booking" invocation-numbers="0"/>
+          <include name="afterMethod"/>
+          <include name="setUp"/>
+          <include name="test_getBookin"/>
+          <include name="tearDown"/>
         </methods>
       </class> <!-- api.tests.RestBooker_tests -->
     </classes>

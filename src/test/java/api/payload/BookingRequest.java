@@ -1,64 +1,73 @@
 package api.payload;
+import java.util.Optional;
 
 public class BookingRequest {
-	private String firstname;
-	private String lastname;
-	private int totalprice;
-	private boolean depositpaid;
-	private BookingDates bookingdates;
-	private String additionalneeds;
+	private Optional<String> firstname;
+	private Optional<String> lastname;
+	private Optional<Integer> totalprice;
+	private Optional<Boolean> depositpaid;
+	private Optional<BookingDates> bookingdates;
+	private Optional<String> additionalneeds;
 	
 	public BookingRequest() {
 		
+		firstname = Optional.empty();
+		lastname = Optional.empty();
+		totalprice = Optional.empty();
+		depositpaid = Optional.empty();
+		bookingdates = Optional.empty();
+	    additionalneeds = Optional.empty();
 	}
 
-	public String getFirstname() {
+	public Optional<String> getFirstname() {
 		return firstname;
 	}
 
 	public void setFirstname(String firstname) {
-		this.firstname = firstname;
+		this.firstname = Optional.ofNullable(firstname);
 	}
 
-	public String getLastname() {
+	public Optional<String> getLastname() {
 		return lastname;
 	}
 
 	public void setLastname(String lastname) {
-		this.lastname = lastname;
+		this.lastname = Optional.ofNullable(lastname);
 	}
 
-	public int getTotalprice() {
+	public Optional<Integer> getTotalprice() {
 		return totalprice;
 	}
 
 	public void setTotalprice(int totalprice) {
-		this.totalprice = totalprice;
+		this.totalprice = Optional.ofNullable(totalprice);
 	}
 
-	public boolean isDepositpaid() {
+	public Optional<Boolean> getDepositpaid() {
 		return depositpaid;
 	}
 
 	public void setDepositpaid(boolean depositpaid) {
-		this.depositpaid = depositpaid;
+		this.depositpaid = Optional.ofNullable(depositpaid);
 	}
 
-	public BookingDates getBookingdates() {
+	public Optional<BookingDates> getBookingdates() {
 		return bookingdates;
 	}
 
 	public void setBookingdates(BookingDates bookingdates) {
-		this.bookingdates = bookingdates;
+		this.bookingdates = Optional.ofNullable(bookingdates);
 	}
 
-	public String getAdditionalneeds() {
+	public Optional<String> getAdditionalneeds() {
 		return additionalneeds;
 	}
 
 	public void setAdditionalneeds(String additionalneeds) {
-		this.additionalneeds = additionalneeds;
+		this.additionalneeds = Optional.ofNullable(additionalneeds);
 	}
+
+	
 
 	
 	

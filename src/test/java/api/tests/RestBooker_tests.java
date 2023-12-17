@@ -3,12 +3,25 @@ package api.tests;
 
 import org.testng.Assert;
 import org.testng.ITestContext;
+import org.testng.ITestResult;
+import org.testng.annotations.AfterClass;
+import org.testng.annotations.AfterMethod;
+import org.testng.annotations.AfterTest;
 import org.testng.annotations.BeforeClass;
 import org.testng.annotations.Test;
 
 import io.restassured.config.ObjectMapperConfig;
+
+import com.aventstack.extentreports.ExtentReports;
+import com.aventstack.extentreports.ExtentTest;
+import com.aventstack.extentreports.Status;
+import com.aventstack.extentreports.reporter.ExtentSparkReporter;
+import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.node.JsonNodeFactory;
+import com.fasterxml.jackson.databind.node.ObjectNode;
+import com.fasterxml.jackson.datatype.jdk8.Jdk8Module;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 
 import static org.hamcrest.Matchers.*;
@@ -18,6 +31,7 @@ import java.text.SimpleDateFormat;
 import java.time.LocalDate;
 import java.util.Collections;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -26,19 +40,49 @@ import api.endpoints.Routes;
 import api.payload.BasicAuth;
 import api.payload.BookingDates;
 import api.payload.BookingRequest;
+
 import io.restassured.RestAssured;
 import io.restassured.module.jsv.JsonSchemaValidator;
+import io.restassured.path.json.JsonPath;
 import io.restassured.response.Response;
+import utils.ExtentReportsManager;
+
 import static io.restassured.module.jsv.JsonSchemaValidator.matchesJsonSchemaInClasspath;
 public class RestBooker_tests {
 	
 	BasicAuth authPayload;
-	private String token_id;
+	private static ExtentReports extent;
+    private static ExtentTest test;
+	
+	
+	@BeforeClass
+	public void setUp() {
+		
+		extent = ExtentReportsManager.createInstance();
+        test = ExtentReportsManager.createTest(getClass().getSimpleName());
+
+	}
+	
+	@AfterClass
+	public void tearDown() {
+		
+		extent.flush(); 
+	}
+	@AfterMethod
+	public void afterMethod(ITestResult result) {
+	    // Example of marking the test as passed or failed
+	    if (result.getStatus() == ITestResult.SUCCESS) {
+	        test.log(Status.PASS, "Test Passed");
+	    } else if (result.getStatus() == ITestResult.FAILURE) {
+	        test.log(Status.FAIL, "Test Failed");
+	        test.log(Status.FAIL, "Failure Details: " + result.getThrowable());
+	    }
+	}
 
 	
 	@Test(priority = 1)
 	public void test_basicAuth(ITestContext context) {
-		System.out.println("url--->" +Routes.AUTH_URL);
+		System.out.println("Auth url--->" +Routes.AUTH_URL);
 		
 		Response response = 
 				RestBooker_endpoints.create_authToken("admin", "password123");
@@ -57,9 +101,11 @@ public class RestBooker_tests {
 		
 		context.setAttribute("token_id", token_id);
 		
+		
+		
 	}
 	
-	//@Test(priority = 2, dependsOnMethods = "test_basicAuth")
+	@Test(priority = 2, dependsOnMethods = "test_basicAuth")
 	public void test_getAllBookings(ITestContext context) {
 		Response allBookings_resp = 
 				RestBooker_endpoints.get_allBookingIds();
@@ -81,16 +127,16 @@ public class RestBooker_tests {
 	}
 	
 	
-	//@Test
+	@Test
 	public void test_getBookingId_filterByName() {
 		Response response = 
 				RestBooker_endpoints.get_FilterByName_BookingIds("sally", "brown");
 		System.out.println(response.asPrettyString());
 		response.then().statusCode(200);
-		
+		test.pass("Test passed"); 
 	}
 	
-	//@Test
+	@Test
 	public void test_getBookingId_filterByDate() throws ParseException {
 		SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd");
 		Date checkin1 = dateFormat.parse("2014-03-13");
@@ -107,9 +153,9 @@ public class RestBooker_tests {
 		
 	}
 	
-	//@Test
+	@Test
 	public void test_getBookin() {
-			Response resp = RestBooker_endpoints.get_booking("223");
+			Response resp = RestBooker_endpoints.get_booking("112");
 			resp.then().log().all();
 			//System.out.println("Resp:"+resp.asPrettyString());
 			resp.then().statusCode(200);
@@ -121,8 +167,9 @@ public class RestBooker_tests {
 	}
 	
 	
-	//@Test
+	@Test(priority =1)
 	public void test_create_booking(ITestContext context) throws ParseException, JsonProcessingException {
+		System.out.println("create test-----");
 		BookingRequest reqPayload = new BookingRequest();
 		
 		reqPayload.setFirstname("Aparna");
@@ -143,6 +190,7 @@ public class RestBooker_tests {
 
 		ObjectMapper objMapper = new ObjectMapper();
 		objMapper.registerModule(new JavaTimeModule());
+		objMapper.registerModule(new Jdk8Module());
 		
 		String jsonpayload = objMapper.writeValueAsString(reqPayload);
 		
@@ -170,9 +218,9 @@ public class RestBooker_tests {
 	}
 
 	
-	@Test(dependsOnMethods = "test_basicAuth")
+	@Test(priority =2,dependsOnMethods = "test_basicAuth")
 	public void test_updateBooking(ITestContext context) throws JsonProcessingException {
-		
+		System.out.println("update test-----");
 		String token_id = (String) context.getAttribute("token_id");
 		System.out.println("token_id::::"+token_id);
 		BookingRequest reqPayload = new BookingRequest();
@@ -192,15 +240,113 @@ public class RestBooker_tests {
 		
 		ObjectMapper objMapper = new ObjectMapper();
 		objMapper.registerModule(new JavaTimeModule());
+	 objMapper.registerModule(new Jdk8Module());
 		String jsonpayload = objMapper.writeValueAsString(reqPayload);
 		
 		System.out.println("reqpayload--->"+jsonpayload);
 		
-		Response response = RestBooker_endpoints.update_booking(reqPayload, 1, token_id);
+		Response response = RestBooker_endpoints.update_booking(reqPayload, 11, token_id);
 		response.then().log().all();
 		
 		
+	}
+	
+	
+	@Test(priority=3, dependsOnMethods = "test_basicAuth")
+	public void test_partialUpdate_booking(ITestContext context) throws JsonProcessingException {
+		
+//		Map<String,Object> patchPayload = new HashMap<String,Object>();
+//		patchPayload.put("firstname", "Aglio");
+//		patchPayload.put("lastname", "Olio");
+		
+		ObjectNode patchPayload = JsonNodeFactory.instance.objectNode();
+		patchPayload.put("firstname", "Ombre");
+		patchPayload.put("lastname", "Olio");
+//		BookingRequest reqPayload = new BookingRequest();
+//			
+//		reqPayload.setFirstname("Aglio");
+//		reqPayload.setLastname("Advait");
+//		reqPayload.setDepositpaid(true);
+//		reqPayload.setTotalprice(209);
+//		
+//		BookingDates bookingDates = new BookingDates();
+//		bookingDates.setCheckin(LocalDate.parse("2023-12-01"));
+//		bookingDates.setCheckout(LocalDate.parse("2023-12-02"));
+//		
+//		
+//		reqPayload.setBookingdates(bookingDates);
+//		reqPayload.setAdditionalneeds("chocolate cake");
+//		
+			String token_id = (String) context.getAttribute("token_id");
+			
+			ObjectMapper objMapper = new ObjectMapper();
+			objMapper.registerModule(new JavaTimeModule());
+			objMapper.registerModule(new Jdk8Module());
+			objMapper.setSerializationInclusion(JsonInclude.Include.NON_NULL);
+				String jsonreqPayload = objMapper.writeValueAsString(patchPayload);
+				System.out.println("req Payload:::" +jsonreqPayload);
+		
+		
+		
+		Response response = RestBooker_endpoints.patch_booking(patchPayload, 11, token_id);
+		response.then().log().all();
+		response.then().assertThat().statusCode(200);
+		
+		Assert.assertEquals(response.jsonPath().getInt("totalprice"), 209);
 		
 		
 	}
+	
+	//private boolean isDeletePerformed = false;
+	
+	@Test(priority = 4,dependsOnMethods =  "test_basicAuth")
+	public void test_delete_booking(ITestContext context) {
+		System.out.println("Delete test-----");
+		Response getResp = RestBooker_endpoints.get_booking("11");
+		getResp.then().log().all();
+		int statusCode = getResp.statusCode();
+		if(statusCode ==201) {
+		
+		//if(!isDeletePerformed) {
+		String token_id = (String) context.getAttribute("token_id");
+		System.out.println("before delete====");
+		Response response = RestBooker_endpoints.delete_booking(11,token_id);
+		
+			response.then().log().all();
+			Assert.assertEquals(response.getStatusCode(), 201);
+			System.out.println("After delete====");
+			
+			Response afterResp = RestBooker_endpoints.get_booking("11");
+			afterResp.then().log().all();
+	}
+	else {
+		System.out.println("Delete already performed");
+	}
+		
+
 }
+	
+	@Test(priority=5)
+	public void test_create_url(ITestContext context) throws JsonProcessingException {
+		System.out.println("create with url---");
+		String reqBody = "firstname=Jim" +
+                "&lastname=Brown" +
+                "&totalprice=111" +
+                "&depositpaid=true" +
+                "&bookingdates%5Bcheckin%5D=2018-01-01" +
+                "&bookingdates%5Bcheckout%5D=2018-01-02"+
+                "&additionalneeds=ok bye";
+		
+		ObjectMapper objMapper = new ObjectMapper();
+			String jsonreq = objMapper.writeValueAsString(reqBody);
+			System.out.println("req payload --->"+jsonreq);
+		
+		Response resp = RestBooker_endpoints.create_booking_url(reqBody);
+		resp.then().log().all();
+		
+		System.out.println("Headers::"+resp.getHeaders());
+		System.out.println("Body::"+resp.getBody().asPrettyString());
+		
+		
+	}
+	}
